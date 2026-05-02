@@ -1,4 +1,4 @@
-name: Upload Build File to JFrog
+name: Upload Generic Build to JFrog
 
 on:
   push:
@@ -7,20 +7,20 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-upload:
+  build-and-upload:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Create build file
+      - name: Create build artifact
         run: |
           mkdir -p build
-          echo "Build created from GitHub Actions" > build/app.txt
+          cp app.txt build/
           zip -r app-build.zip build README.md
 
-      - name: Upload to JFrog Artifactory
+      - name: Upload artifact to JFrog Generic Repository
         run: |
           curl -u "${{ secrets.JF_USER }}:${{ secrets.JF_TOKEN }}" \
             -T app-build.zip \
