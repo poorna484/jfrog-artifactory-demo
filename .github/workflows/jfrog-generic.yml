@@ -1,10 +1,9 @@
-name: Upload Generic Build to JFrog
+name: Build and Push Artifact to JFrog
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   build-and-upload:
@@ -14,14 +13,23 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Create build artifact
-        run: |
-          mkdir -p build
-          cp app.txt build/
-          zip -r app-build.zip build README.md
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v5
+        env:
+          JF_URL: ${{ secrets.JF_URL }}
+          JF_USER: ${{ secrets.JF_USER }}
+          JF_PASSWORD: ${{ secrets.JF_TOKEN }}
 
-      - name: Upload artifact to JFrog Generic Repository
+      - name: Build artifact
         run: |
-          curl -u "${{ secrets.JF_USER }}:${{ secrets.JF_TOKEN }}" \
-            -T app-build.zip \
-            "${{ secrets.JF_URL }}/generic-local/github-actions/app-build-${{ github.run_number }}.zip"
+          mkdir build
+          echo "This is my build from GitHub Actions" > build/app.txt
+          zip -r app-build.zip build/
+
+      - name: Upload artifact to JFrog
+        run: |
+          jf rt upload "app-build.zip" "generic-local/github-actions/app-build-${{ github.run_number }}.zip"
+
+      - name: Publish build info
+        run: |
+          jf rt build-publish github-actions-build ${{ github.run_number }}
